@@ -1,0 +1,123 @@
+Kodu çalıştırma adımları:
+
+preproccessing: python main.py --mode preprocess
+split: python main.py --mode split
+train: python main.py --mode train
+
+
+
+
+DeepfakeDetection/
+├── data/
+│   ├── raw/                        # Celeb-DF ham videoları
+│   └── processed/                  # Bölünmüş ve kırpılmış yüz klasörleri
+│       ├── train/                  # %70 Eğitim verisi
+│       │   ├── Real/
+│       │   └── Fake/
+│       ├── val/                    # %15 Doğrulama verisi
+│       │   ├── Real/
+│       │   └── Fake/
+│       └── test/                   # %15 Nihai Test verisi
+│           ├── Real/
+│           └── Fake/
+├── checkpoints/                    # Eğitilen model ağırlıkları (.pth)
+│   └── xception/                   # Xception ağırlıklarının geleceği yer
+├── src/
+│   ├── __init__.py
+│   ├── split_data.py               # VERİ BÖLME MOTORU
+│   ├── dataset.py                  # PyTorch Dataset (Boyut dinamik olacak)
+│   ├── evaluation.py               # Metrikler ve Grad-CAM
+│   ├── train.py                    # Merkezi Eğitim Döngüsü
+│   ├── utils.py                    # Yardımcı Araçlar
+│   └── models/
+│       ├── __init__.py
+│       └── xception.py             # Xception Model Tanımı
+├── notebooks/
+│   └── final_evaluation.ipynb
+├── app.py                          # Streamlit Arayüzü
+└── main.py                         # Projeyi başlatan ana betik
+
+
+
+
+data/processed/train/ (%70): Modelin eğitim sırasında bakıp ağırlıklarını güncelleyeceği yüz resimleri. (Model burayı ezberlemeye çalışacak).
+data/processed/val/ (%15): Modelin eğitimi sırasında, her epoch sonunda "Bakalım gerçekten öğreniyor musun?" diye test edeceğimiz doğrulama yüzleri. Model bu verilere bakarak kendini geliştirecek ama bunları ezberleyemeyecek.
+data/processed/test/ (%15): Eğitim tamamen bittiğinde, modelin başarısını (AUC, F1-Score) kullanacağım modelin daha önce asla ve asla görmediği nihai test yüzleri.
+
+
+
+Batch Size = 4 iken: Ekran kartına her adımda sadece 4 resim gönderiyordum. 
+Kart bu az sayıdaki resmi çok hızlı işliyordu ama çekirdeklerin büyük kısmı boşta bekliyordu. 
+Yani ekran kartını tam kapasiteyle besleyemiyordum.
+
+Batch Size = 8 olunca: Her adımda aynı anda 8 resim birden GPU çekirdeklerine dağıtılıyor. 
+Kart, elindeki paralel işlem gücünü daha verimli kullanıyor. 
+VRAM (ekran kartı belleği) kullanımın bir miktar artar ama kartın boşta bekleme süresi azalır.
+
+
+num_workers=4 ile veri yükleme işlemini hızlandırır 
+pin_memory=True ile CPU-GPU transferini optimize eder
+
+
+
+(.venv) PS C:\Users\ENES\Desktop\xception> python main.py --mode train
+📊 [TRAIN] Seti Hazır: 11514 adet yüz görüntüsü sisteme yüklendi.
+📊 [VAL] Seti Hazır: 2466 adet yüz görüntüsü sisteme yüklendi.
+C:\Users\ENES\Desktop\xception\.venv\Lib\site-packages\timm\models\_factory.py:138: UserWarning: Mapping deprecated model name xception to current legacy_xception.
+  model = create_fn(
+🚀 Xception Mimarisi Eğitimi Başlıyor... Cihaz: cuda
+📈 Eğitim Örneği: 11514 | Doğrulama Örneği: 2466
+Epoch 1/5: 100%|██████████████████████████████████████████████████████████████████████████████████| 1440/1440 [22:11<00:00,  1.08it/s, train_loss=1.4736]
+
+📊 Epoch 1 Özet:
+   Eğitim    -> Loss: 0.4549 | AUC: 0.8646
+   Doğrulama -> Loss: 0.1657 | AUC: 0.9879
+🌟 En iyi model güncellendi! Yeni Best Val AUC: 0.9879
+--------------------------------------------------
+Epoch 2/5: 100%|██████████████████████████████████████████████████████████████████████████████████| 1440/1440 [22:16<00:00,  1.08it/s, train_loss=1.2926]
+
+📊 Epoch 2 Özet:
+   Eğitim    -> Loss: 0.2731 | AUC: 0.9560
+   Doğrulama -> Loss: 0.0821 | AUC: 0.9972
+🌟 En iyi model güncellendi! Yeni Best Val AUC: 0.9972
+--------------------------------------------------
+Epoch 3/5: 100%|██████████████████████████████████████████████████████████████████████████████████| 1440/1440 [22:12<00:00,  1.08it/s, train_loss=0.0037]
+
+📊 Epoch 3 Özet:
+   Eğitim    -> Loss: 0.2338 | AUC: 0.9697
+   Doğrulama -> Loss: 0.0845 | AUC: 0.9983
+🌟 En iyi model güncellendi! Yeni Best Val AUC: 0.9983
+--------------------------------------------------
+Epoch 4/5: 100%|██████████████████████████████████████████████████████████████████████████████████| 1440/1440 [22:12<00:00,  1.08it/s, train_loss=0.0051]
+
+📊 Epoch 4 Özet:
+   Eğitim    -> Loss: 0.2072 | AUC: 0.9762
+   Doğrulama -> Loss: 0.0533 | AUC: 0.9986
+🌟 En iyi model güncellendi! Yeni Best Val AUC: 0.9986
+--------------------------------------------------
+Epoch 5/5: 100%|██████████████████████████████████████████████████████████████████████████████████| 1440/1440 [22:11<00:00,  1.08it/s, train_loss=0.0007]
+
+📊 Epoch 5 Özet:
+   Eğitim    -> Loss: 0.1875 | AUC: 0.9805
+   Doğrulama -> Loss: 0.0460 | AUC: 0.9987
+🌟 En iyi model güncellendi! Yeni Best Val AUC: 0.9987
+--------------------------------------------------
+
+
+
+
+
+Projemde iki farklı felsefeyi kıyasladım. EfficientNet-B0, donanım kaynaklarımızı en optimum şekilde kullanarak hızlı ve verimli bir baseline oluşturmamızı sağladı. 
+Ancak deepfake videolarındaki pikselsel artefaktlar ve yapay doku bozulmaları mikroskobik düzeyde olduğu için, 
+literatürde bu işin öncüsü olan ve 'Derinlemesine Ayrılabilir Evrişim' (Depthwise Separable Conv) kullanan Xception mimarisine geçiş yaptım. 
+Xception 299x299 çözünürlükte yüzün ince detaylarına daha iyi odaklanarak kararlılığı artırdı.
+
+
+
+
+
+Kriter                  Xception Mimarisi                   EfficientNet-B0 Mimarisi
+Odak Noktası            Maksimum Detay ve İnce Doku Analizi Parametre Verimliliği ve Optimum Hız
+Giriş Boyutu            299×299 (Yüksek Çözünürlük)         224×224 (veya daha düşük)
+Deepfake Başarısı       SOTA (Literatürde en köklü ve kararlı model)   "Yeni nesil, hızlı ama ince detaylarda bazen kaçırabilir"
+GTX 1650 Yükü           Yüksek VRAM tüketimi (Zorlayıcı)    Düşük VRAM tüketimi (Rahat çalışma)
