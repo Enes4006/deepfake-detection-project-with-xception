@@ -44,6 +44,10 @@ cd bozok-deepfake
 # Install dependencies
 pip install -r requirements.txt
 
+```
+
+```bash
+
 
 To boot up the Streamlit-driven analytics dashboard:
 streamlit run src/interface.py
