@@ -38,8 +38,8 @@ Ensure you have Python 3.9+ and a CUDA-supported GPU environment.
 
 ```bash
 # Clone the repository
-git clone [https://github.com/m-enesbaysal/bozok-deepfake.git](https://github.com/m-enesbaysal/bozok-deepfake.git)
-cd bozok-deepfake
+git clone [https://github.com/Enes4006/deepfake-detection-project-with-xception.git](https://github.com/Enes4006/deepfake-detection-project-with-xception.git)
+cd xception
 
 # Install dependencies
 pip install -r requirements.txt
